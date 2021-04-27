@@ -1,6 +1,6 @@
 This projects provides two modules which simplify terraform configuration for OpenStack provider:
 * **Network** lets you quickly define networks, security groups and rules
-* **Cluster** is a convinient shortcut for compute instances, volumes and Floating IP associations
+* **Cluster** is a convenient shortcut for compute instances, volumes and Floating IP associations
 
 I'll probably split them into two projects and upload to Terraform Registry in the future
 
