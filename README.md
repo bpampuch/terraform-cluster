@@ -98,7 +98,7 @@ module "test-net" {
     * fixed_ip - optional fixed IP
     * floating_ip - optional Floating IP to be assigned to this instance
     * availability_zone - optional (but required in case you set volume_type)
-    * network_name - network name you want to attach this instance to
+    * network_name - optional network name you want to attach this instance to
         * if you use this with the Network module, you will probably leverage `network_names` output (eg. ```module.test-net.network_names.bastion```)
     * security_groups - a list of security group names
         * if you use this with the Network module, you will probably leverage `security_group_names` output (eg. ```security_groups = [module.test-net.security_group_names.bastion]```)
@@ -116,8 +116,8 @@ module "test-cluster" {
             flavor_name = "C1R2"
             image_name = "Centos-8-2004"
             volume_size = 20
-            # volume_type = "io-nvme"           # optional volume_type for fast storage
-            availability_zone = "az1"           # this is required for io-nvme
+            # volume_type = "io-nvme"
+            availability_zone = "az1"
             floating_ip = "10.232.11.221"
             fixed_ip = "10.111.1.100"           # this is optional
             network_name = module.test-net.network_names.bastion
