@@ -241,7 +241,7 @@ module "test-cluster" {     # << DON'T change this name after deployment, as it 
             network_name = module.test-net.network_names.front
             security_groups = [module.test-net.security_group_names.front]
         }
-        concierge = {
+        app1 = {
             flavor_name = "C1R2"
             image_name = "Centos-8-2004"
             volume_size = 20
