@@ -1,16 +1,163 @@
-This projects provides two modules which simplify terraform configuration for OpenStack provider:
-* **Network** lets you quickly define networks, security groups and rules
-* **Cluster** is a convenient shortcut for compute instances, volumes and Floating IP associations
+# Intro
+The aim of this project is to simplify terraform configuration for OpenStack provider:
 
-I'll probably split them into two projects and upload to Terraform Registry in the future
+```hcl
+module "test-cluster" {
+    source = "./cluster"
+
+    environment = "test"                        # environment is used for prefixing resource names
+    dns_servers = ["8.8.8.8"]
+    key_pair = "you_keypair_name"
+
+    cluster = {
+        bastion = {
+            net_prefix = "10.110.1"             # only /24 networks are supported at the moment
+            flavor_name = "C1R2"
+            volume_size = 20
+            # volume_type = "io-nvme"           # optional volume type
+            # availability_zone = "az1"         # optional availability zone
+            image_name = "Centos-8-2004"
+            floating_ips = [ "10.100.23.11" ]   # optional if you want to associate FIPs
+            #fixed_ips = [ "10.111.1.100" ]     # optional if you want to set fixed IPs manually
+            open_tcp_ports_for = {
+                "10.100.0.0/24": [ 22 ]
+            }
+            # open_udp_ports_for = ...
+        }
+        nginx = {
+            net_prefix = "10.110.2"
+            flavor_name = "C2R4"
+            image_name = "Centos-8-2004"
+            volume_size = 20
+            count = 2
+            floating_ips = [ "10.100.23.122", "10.100.23.123" ]
+            #fixed_ips = [ "10.111.2.100", "10.111.2.101" ]      # optional
+            open_tcp_ports_for = {
+                "bastion": [ 22 ]
+                "0.0.0.0/0": [ 80, 443 ]
+            }
+        }
+        application = {
+            net_prefix = "10.110.3"
+            flavor_name = "C4R8"
+            image_name = "Centos-8-2004"
+            volume_size = 20
+            count = 2
+            open_tcp_ports_for = {
+                "bastion": [ 22 ]
+                "nginx": [ 80 ]
+            }
+        }
+        mongo = {
+            net_prefix = "10.110.4"
+            flavor_name = "C4R8"
+            image_name = "Centos-8-2004"
+            volume_size = 20
+            count = 3
+            open_tcp_ports_for = { 
+                "bastion" = [22], 
+                "application" = [27017] 
+                "mongo" = [27017]
+            } 
+            
+            fixed_ip = ["10.111.4.100", "10.111.4.101", "10.111.4.102"]
+            attach_volumes = [ ["fast_db_volume_1"], ["fast_db_volume_2"], ["fast_db_volume_3"] ]
+            availability_zone = "az1"
+        }
+    }
+}
+```
+
+## Input Variables
+* `environment` - used to prefix resource names (to distinguish them between various environments)
+* `dns_servers` - a list of dns servers
+* `key_pair` - name of public key uploaded to openstack
+* `cluster` - a "map" with named groups, where each group contains the following fields:
+  * `net_prefix` - 3-octets of the network for this group (eg. "10.110.1")
+  * `flavor_name` - flavor name for instances in this group (eg. "C1R2")
+  * `volume_size` - size of bootable volumes created for each instance in this group
+  * `image_name` - base image name for volumes in this group (eg. "Centos-8-2004")
+  * `volume_type` - optional volume type (eg. 'io-nvme' if your openstack installation supports it)
+  * `availability_zone` - optional availability zone for this group
+  * `count` - optional number of compute instances to be spawned (default: 1)
+  * `open_tcp_ports_for` - an optional set of security group rules for the tcp protocol (as described below)
+  * `open_udp_ports_for` - an optional set of security group rules for the udp protocol (as described below)
+  * `fixed_ips` - an optional array of fixed ips for each instance (the array size should correspond to the `count` parameter)
+  * `floating_ips` - an optional array of FIPs for reach instance (the array size should correspond to the `count` parameter)
+  * `attach_volumes` - an array of arrays with volume names which are supposed to be attached to particular instances in this group (refer to the description below for further information)
+
+## Resources
+The module creates a new *openstack_networking_router_v2* connected to the external network and then, for each subelement of `cluster`, the following set of resources:
+   * a *openstack_networking_network_v2*, a *openstack_networking_subnet_v2* and a *openstack_networking_router_interface_v2* for the subnetwork (based on `net_prefix`)
+   * an *openstack_networking_secgroup_v2* with:
+     * **allow-all-out** rules for TCP/UDP/ICMP
+     * an optional set of **allow-in-tcp** rules based on `open_tcp_ports_for`
+     * an optional set of **allow-in-udp** rules based on `open_udp_ports_for`
+   * an *openstack_compute_servergroup_v2* with **anti-affinity** policy
+   * a `count` number of
+     * `openstack_blockstorage_volume_v3` with
+        * `volume_size` size, 
+        * base `image_name` image
+        * an optional `availability_zone`
+        * an optional `volume_type`
+        * enable_online_resize set to true
+     * `openstack_compute_instance_v2` with
+        * `flavor_name` flavor name
+        * `key_pair` key pair name
+        * security group set to the group created above, based on `open_tcp_ports_for` and `open_udp_ports_for` (refer to the description below for further information)
+        * a binding to the appropriate network created above
+        * scheduler_hints.group set to the anti-affinity server group created aboce
+        * an optional fixed_ip (as described below)
+        * an optional `availability_zone`
+        * an optional set of `openstack_compute_floatingip_associate_v2` (as described below)
+        * an optional set of `openstack_compute_volume_attach_v2` (as described below)
+
+## Security Groups and Rules
+There are several ways to shape security groups and their granularities. 
+
+This module creates a single security group for each network and instances running in that network. 
+
+By default it allows all out (egress) traffic and limits ingress based on rules defined in `open_tcp_ports_for` and `open_udp_ports_for`:
+```
+open_tcp_ports_for = {
+    "remote_ip": [ port_number, port_number2, "port-range" ]
+    "another_remote_ip": [ port_number3 ]
+}
+```
+* each key represents a remote_ip, which can be:
+  * a CIDR (eg. "0.0.0.0/0") or 
+  * the name of a group from `cluster` definition - in such case it will turn into `${net_prefix}.0/24`
+* each value is an array of ports to be opened. Array elements can be port numbers or port ranges (strings with a dash, eg "10000-20000")
+
+## Fixed IPs and Floating IPs
+You can provide an array of `fixed_ips` or `floating_ips` if you want to assign them to the instances.
+
+At the moment it's not possible to assign more than one fixed_ip and one FIP to a single instance.
+
+Therefore the size of fixed_ips and floating_ips arrays should equal `count` parameter for each cluster group.
+
+## Attached Volumes
+Since accidental removal of resources with Terraform can happen if you're not careful enough, it's common to manage some volumes (eg. databases) externally.
+
+You can attach such volumes to instances created with this module using attach_volumes
+```
+attach_volumes = [ ["fast_db_volume_1"], ["fast_db_volume_2"], ["fast_db_volume_3"] ]
+```
+Each element of the external array corresponds to a particular compute instance, therefore the size of this array should equal `count` parameter.
+Each inner array is a set of volume names which should be attached to the compute instance.
+
+Imagine we create 4 compute instances (`count` = 4) and we want to attach two "external" volumes for each instance (one for logs and another for db data). Assuming their names are logs1, db1, logs2, db2, logs3, db3, logs4, db4 we can do this with the following syntax:
+```
+attach_volumes = [ ["logs1", "db1"], ["logs2", "db2"], ["logs3", "db3"], ["logs4", "db4"] ]
+```
+
+# Submodules
+Cluster module leverages two other modules from this repository
+* **Network** which lets you quickly define networks, security groups and rules
+* **Instance** - a convenient shortcut for compute instances, volumes and Floating IP associations
 
 # Network Module
 ## Input Variables
-* `environment` - used only as a prefix for resource names (to distinguish between various environments)
-* `external_network_name` - external network name (defaults to internal_ip_01)
-* `dns_servers` - a list of dns servers (later passed to subnets)
-* `networks` - a map of network keys and 3-octed IP prefixes
-* `network_rules` - definition of security groups and rules
 
 ## Usage
 ```hcl
@@ -160,7 +307,7 @@ open_stack_password = "PASSWORD"
 terraform init
 terraform apply
 ```
-# Complete example
+## An example leveraging Network and Instance modules
 
 ```hcl
 module "test-net" {

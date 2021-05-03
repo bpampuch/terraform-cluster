@@ -17,7 +17,7 @@ resource "openstack_compute_instance_v2" "instances" {
         source_type           = "volume"
         boot_index            = 0
         destination_type      = "volume"
-        delete_on_termination = false
+        #delete_on_termination = false
     }
 
     network {
@@ -28,6 +28,10 @@ resource "openstack_compute_instance_v2" "instances" {
     availability_zone = each.value.availability_zone
 
     user_data = file("${path.module}/sshdnsoff.sh")
+
+    scheduler_hints {
+        group = each.value.server_group
+    }
 }
 
 
