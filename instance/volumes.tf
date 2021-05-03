@@ -4,8 +4,6 @@ data "openstack_images_image_v2" "images" {
 }
 
 locals {
-    # na potrzeby obsługi case'u powtórzeń (gdy ten sam obraz jest wymieniony w wielu maszynach, czyli praktycznie zawsze)
-    # robimy grupowanie po nazwie (stad i.id... a nie i.id), a odwolujac sie do tego pobieramy pierwszy element z listy (.0)
     image_ids = {for i in data.openstack_images_image_v2.images : i.name => i.id...}
 }
 
