@@ -16,3 +16,11 @@ resource "openstack_blockstorage_volume_v3" "volumes" {
     availability_zone = each.value.availability_zone
     volume_type     = each.value.volume_type
 }
+
+module "attached_volumes" {
+    source = "../ordered_volume_attach"
+
+    for_each        = local.machines_with_flavors
+    instance_id     = openstack_compute_instance_v2.instances[each.key].id
+    volume_names    = each.value.attach_volumes
+}

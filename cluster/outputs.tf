@@ -1,10 +1,7 @@
-# output "volumes" {
-#     value = {
-#         for key, volume in openstack_blockstorage_volume_v3.volumes:
-#         key => volume
-#     }
-#     sensitive = true
-# }
+output "instances" {
+    value = module.instance.instances
+    sensitive = true
+}
 
 # output "instances" {
 #     value = {

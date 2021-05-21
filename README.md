@@ -146,6 +146,10 @@ attach_volumes = [ ["fast_db_volume_1"], ["fast_db_volume_2"], ["fast_db_volume_
 Each element of the external array corresponds to a particular compute instance, therefore the size of this array should equal `count` parameter.
 Each inner array is a set of volume names which should be attached to the compute instance.
 
+Because of current Terraform limitations it's unsafe to use openstack_blockstorage_volume_v2 with for_each (this is errorprone
+and can change the order of volumes, eg. /dev/vdb can become /dev/vdc). This module has a workaround to preserve the order, but 
+limits the amount of volumes which can be attached to a single compute instance to 10. 
+
 Imagine we create 4 compute instances (`count` = 4) and we want to attach two "external" volumes for each instance (one for logs and another for db data). Assuming their names are logs1, db1, logs2, db2, logs3, db3, logs4, db4 we can do this with the following syntax:
 ```
 attach_volumes = [ ["logs1", "db1"], ["logs2", "db2"], ["logs3", "db3"], ["logs4", "db4"] ]
@@ -234,7 +238,7 @@ module "test-net" {
     ```security_groups = [module.test-net.security_group_names.bastion]```
 
 
-# Cluster Module
+# Instance Module
 * `environment` - used only as a prefix for resource names (to distinguish between various environments)
 * `key_pair` - you uploaded public key name
 * `machines` - a map of machines with the following sub-object keys
@@ -247,6 +251,7 @@ module "test-net" {
     * availability_zone - optional (but required in case you set volume_type)
     * network_name - optional network name you want to attach this instance to
         * if you use this with the Network module, you will probably leverage `network_names` output (eg. ```module.test-net.network_names.bastion```)
+    * attach_volumes - a list of volume names which should be attached
     * security_groups - a list of security group names
         * if you use this with the Network module, you will probably leverage `security_group_names` output (eg. ```security_groups = [module.test-net.security_group_names.bastion]```)
 
