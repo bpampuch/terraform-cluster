@@ -16,7 +16,7 @@ variable "dns_servers" {
 variable "cluster" {
     #   The type should be declared as:
     #     map(object({
-    #        net_prefix = string
+    #        network = string
     #        count = optional(number)
     #        flavor_name = string
     #        image_name = optional(string)

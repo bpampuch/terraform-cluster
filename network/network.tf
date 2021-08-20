@@ -10,7 +10,7 @@ resource "openstack_networking_network_v2" "net" {
 }
 
 locals {
-    cidr_by_names = { for key, value in var.networks : key => "${value}.0/24" }
+    cidr_by_names = var.networks
 }
 
 resource "openstack_networking_subnet_v2" "subnets" {

@@ -29,7 +29,7 @@ variable "network_rules" {
 #   So unfortunately, to make it work, type checking is turned off with map(any)
     type = map(any)
     description = "Security group and rules"
-    default = { }
+    default = {}
 }
 
 # 
