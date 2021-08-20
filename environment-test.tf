@@ -7,12 +7,13 @@ module "test-cluster" {
 
     cluster = {
         bastion = {
-            net_prefix = "10.110.1"             # only /24 networks are supported at the moment
+            network = "10.110.1.0/24"             
             flavor_name = "C1R2"
             volume_size = 20
             # volume_type = "io-nvme"           # optional volume type
             # availability_zone = "az1"         # optional availability zone
             image_name = "Centos-8-2004"
+            # generate_fip = true               # optional if you want generate FIPs (default: false)
             floating_ips = [ "10.100.23.11" ]   # optional if you want to associate FIPs
             #fixed_ips = [ "10.111.1.100" ]     # optional if you want to set fixed IPs manually
             open_tcp_ports_for = {
@@ -21,7 +22,7 @@ module "test-cluster" {
             # open_udp_ports_for = ...
         }
         nginx = {
-            net_prefix = "10.110.2"
+            network = "10.110.2.0/24"
             flavor_name = "C2R4"
             image_name = "Centos-8-2004"
             volume_size = 20
@@ -34,7 +35,7 @@ module "test-cluster" {
             }
         }
         application = {
-            net_prefix = "10.110.3"
+            network = "10.110.3.0/24"
             flavor_name = "C4R8"
             image_name = "Centos-8-2004"
             volume_size = 20
@@ -45,7 +46,7 @@ module "test-cluster" {
             }
         }
         mongo = {
-            net_prefix = "10.110.4"
+            network = "10.110.4.0/24"
             flavor_name = "C4R8"
             image_name = "Centos-8-2004"
             volume_size = 20

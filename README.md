@@ -11,12 +11,13 @@ module "test-cluster" {
 
     cluster = {
         bastion = {
-            net_prefix = "10.110.1"             # only /24 networks are supported at the moment
+            network = "10.110.1.0/24"             
             flavor_name = "C1R2"
             volume_size = 20
             # volume_type = "io-nvme"           # optional volume type
             # availability_zone = "az1"         # optional availability zone
             image_name = "Centos-8-2004"
+            # generate_fip = true               # optional if you want generate FIPs (default: false)
             floating_ips = [ "10.100.23.11" ]   # optional if you want to associate FIPs
             #fixed_ips = [ "10.111.1.100" ]     # optional if you want to set fixed IPs manually
             open_tcp_ports_for = {
@@ -25,7 +26,7 @@ module "test-cluster" {
             # open_udp_ports_for = ...
         }
         nginx = {
-            net_prefix = "10.110.2"
+            network = "10.110.2.0/24"
             flavor_name = "C2R4"
             image_name = "Centos-8-2004"
             volume_size = 20
@@ -38,7 +39,7 @@ module "test-cluster" {
             }
         }
         application = {
-            net_prefix = "10.110.3"
+            network = "10.110.3.0/24"
             flavor_name = "C4R8"
             image_name = "Centos-8-2004"
             volume_size = 20
@@ -49,7 +50,7 @@ module "test-cluster" {
             }
         }
         mongo = {
-            net_prefix = "10.110.4"
+            network = "10.110.4.0/24"
             flavor_name = "C4R8"
             image_name = "Centos-8-2004"
             volume_size = 20
@@ -73,7 +74,7 @@ module "test-cluster" {
 * `dns_servers` - a list of dns servers
 * `key_pair` - name of public key uploaded to openstack
 * `cluster` - a "map" with named groups, where each group contains the following fields:
-  * `net_prefix` - 3-octets of the network for this group (eg. "10.110.1")
+  * `network` -  network for this group (eg. "10.110.1.0/24")
   * `flavor_name` - flavor name for instances in this group (eg. "C1R2")
   * `volume_size` - size of bootable volumes created for each instance in this group
   * `image_name` - base image name for volumes in this group (eg. "Centos-8-2004")
@@ -83,12 +84,13 @@ module "test-cluster" {
   * `open_tcp_ports_for` - an optional set of security group rules for the tcp protocol (as described below)
   * `open_udp_ports_for` - an optional set of security group rules for the udp protocol (as described below)
   * `fixed_ips` - an optional array of fixed ips for each instance (the array size should correspond to the `count` parameter)
+  * `generate_fip` - an optional flag to generate FIP from pool `external_network_name`
   * `floating_ips` - an optional array of FIPs for reach instance (the array size should correspond to the `count` parameter)
   * `attach_volumes` - an array of arrays with volume names which are supposed to be attached to particular instances in this group (refer to the description below for further information)
 
 ## Resources
 The module creates a new *openstack_networking_router_v2* connected to the external network and then, for each subelement of `cluster`, the following set of resources:
-   * a *openstack_networking_network_v2*, a *openstack_networking_subnet_v2* and a *openstack_networking_router_interface_v2* for the subnetwork (based on `net_prefix`)
+   * a *openstack_networking_network_v2*, a *openstack_networking_subnet_v2* and a *openstack_networking_router_interface_v2* for the subnetwork (based on `network`)
    * an *openstack_networking_secgroup_v2* with:
      * **allow-all-out** rules for TCP/UDP/ICMP
      * an optional set of **allow-in-tcp** rules based on `open_tcp_ports_for`
@@ -126,7 +128,7 @@ open_tcp_ports_for = {
 ```
 * each key represents a remote_ip, which can be:
   * a CIDR (eg. "0.0.0.0/0") or 
-  * the name of a group from `cluster` definition - in such case it will turn into `${net_prefix}.0/24`
+  * the name of a group from `cluster` definition - in such case it will turn into `${network}`
 * each value is an array of ports to be opened. Array elements can be port numbers or port ranges (strings with a dash, eg "10000-20000")
 
 ## Fixed IPs and Floating IPs

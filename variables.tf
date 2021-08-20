@@ -31,8 +31,7 @@ variable "open_stack_password" {
 }
 
 variable "dns_list" { 
-  type = string
+  type = list(string)
   description = "List of DNS addresses"
   default = []
 }
-

@@ -13,10 +13,16 @@ variable "dns_servers" {
     description = "List of DNS servers"
 }
 
+variable "external_network_name" {
+    type = string
+    description = "External network name"
+    default = "external_name"
+}
+
 variable "cluster" {
     #   The type should be declared as:
     #     map(object({
-    #        net_prefix = string
+    #        network = string
     #        count = optional(number)
     #        flavor_name = string
     #        image_name = optional(string)
@@ -25,6 +31,7 @@ variable "cluster" {
     #        open_tcp_ports_for = optional(map(any))
     #        open_udp_ports_for = optional(map(any))
     #        fixed_ips = optional(list(string))
+    #        generate_fip = optional(bool)
     #        floating_ips = optional(list(string))
     #        attached_volumes = optional(list(list(string)))
     #        availability_zone = optional(string)

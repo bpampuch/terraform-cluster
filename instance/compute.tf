@@ -1,5 +1,6 @@
 locals {
     machines_with_flavors = {for key, value in var.machines : key => value if value.flavor_name != null}
+    machines_with_generate_fip = {for key, value in var.machines : key => value if try(value.generate_fip, false)}
     defined_fips = {for key, value in local.machines_with_flavors : key => value.floating_ip if value.floating_ip != null}
 }
 
@@ -47,5 +48,19 @@ resource "openstack_compute_floatingip_associate_v2" "fips" {
     for_each        = local.defined_fips
 
     floating_ip     = each.value
+    instance_id     = openstack_compute_instance_v2.instances[each.key].id
+}
+
+
+resource "openstack_networking_floatingip_v2" "generate_fips" {
+    for_each        = local.machines_with_generate_fip
+    pool            = var.external_network_name
+}
+
+
+resource "openstack_compute_floatingip_associate_v2" "generate_fip_pins" {
+    for_each        = local.machines_with_generate_fip
+    
+    floating_ip     = openstack_networking_floatingip_v2.generate_fips[each.key].address
     instance_id     = openstack_compute_instance_v2.instances[each.key].id
 }
