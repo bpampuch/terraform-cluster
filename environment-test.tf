@@ -5,6 +5,16 @@ module "test-cluster" {
     dns_servers = ["8.8.8.8"]
     key_pair = "you_keypair_name"
 
+    network_rules = {
+        xyz = {
+            in_tcp = {
+                # allow incoming TCP on port 123 from 10.132.0.0/24
+                "10.132.0.0/24" = [ 123 ]     
+            }
+            # in_udp = {}
+        }
+    }
+
     cluster = {
         bastion = {
             network = "10.110.1.0/24"             
@@ -20,6 +30,7 @@ module "test-cluster" {
                 "10.100.0.0/24": [ 22 ]
             }
             # open_udp_ports_for = ...
+            security_groups = ["xyz"]
         }
         nginx = {
             network = "10.110.2.0/24"
@@ -33,6 +44,7 @@ module "test-cluster" {
                 "bastion": [ 22 ]
                 "0.0.0.0/0": [ 80, 443 ]
             }
+            security_groups = ["xyz"]
         }
         application = {
             network = "10.110.3.0/24"

@@ -9,6 +9,16 @@ module "test-cluster" {
     dns_servers = ["8.8.8.8"]
     key_pair = "you_keypair_name"
 
+    network_rules = {
+        xyz = {
+            in_tcp = {
+                # allow incoming TCP on port 123 from 10.132.0.0/24
+                "10.132.0.0/24" = [ 123 ]     
+            }
+            # in_udp = {}
+        }
+    }
+
     cluster = {
         bastion = {
             network = "10.110.1.0/24"             
@@ -24,6 +34,7 @@ module "test-cluster" {
                 "10.100.0.0/24": [ 22 ]
             }
             # open_udp_ports_for = ...
+            security_groups = ["xyz"]
         }
         nginx = {
             network = "10.110.2.0/24"
@@ -37,6 +48,7 @@ module "test-cluster" {
                 "bastion": [ 22 ]
                 "0.0.0.0/0": [ 80, 443 ]
             }
+            security_groups = ["xyz"]
         }
         application = {
             network = "10.110.3.0/24"
@@ -73,6 +85,7 @@ module "test-cluster" {
 * `environment` - used to prefix resource names (to distinguish them between various environments)
 * `dns_servers` - a list of dns servers
 * `key_pair` - name of public key uploaded to openstack
+* `network_rules` - a list of general security groups
 * `cluster` - a "map" with named groups, where each group contains the following fields:
   * `network` -  network for this group (eg. "10.110.1.0/24")
   * `flavor_name` - flavor name for instances in this group (eg. "C1R2")
@@ -83,6 +96,7 @@ module "test-cluster" {
   * `count` - optional number of compute instances to be spawned (default: 1)
   * `open_tcp_ports_for` - an optional set of security group rules for the tcp protocol (as described below)
   * `open_udp_ports_for` - an optional set of security group rules for the udp protocol (as described below)
+  * `security_groups` - a list of general security groups
   * `fixed_ips` - an optional array of fixed ips for each instance (the array size should correspond to the `count` parameter)
   * `generate_fip` - an optional flag to generate FIP from pool `external_network_name`
   * `floating_ips` - an optional array of FIPs for reach instance (the array size should correspond to the `count` parameter)

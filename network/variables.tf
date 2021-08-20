@@ -15,7 +15,8 @@ variable "dns_servers" {
 
 variable "networks" {
     type = map(string)
-    description = "List of networks and their first three octets, eg. 10.111.1"
+    description = "List of networks"
+    default = {}
 }
 
 variable "network_rules" {

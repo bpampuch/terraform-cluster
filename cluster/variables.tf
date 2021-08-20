@@ -19,6 +19,21 @@ variable "external_network_name" {
     default = "external_name"
 }
 
+variable "network_rules" {
+#   The type should be declared as:
+#     type = map(object({
+#         in_tcp = optional(map(any))
+#         in_udp = optional(map(any))
+#     }))
+#   however it fails if network_rules elements differ (eg. some contain in_udp while others don't) 
+#
+#   So unfortunately, to make it work, type checking is turned off with map(any)
+    type = map(any)
+    description = "Security group and rules"
+    default = {}
+}
+
+
 variable "cluster" {
     #   The type should be declared as:
     #     map(object({
