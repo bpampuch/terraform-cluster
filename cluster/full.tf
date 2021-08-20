@@ -4,15 +4,15 @@ module "net" {
     environment = var.environment
     dns_servers = var.dns_servers
 
-    networks = { for name, config in var.cluster: name => config.net_prefix } 
+    networks = { for name, config in var.cluster: name => config.network } 
     network_rules = { 
         for name, config in var.cluster: name => {
             in_tcp = can(config.open_tcp_ports_for) ? {
                 for source, ports in config.open_tcp_ports_for: source => ports
-            } : null
+            } : {}
             in_udp = can(config.open_udp_ports_for) ? {
                 for source, ports in config.open_udp_ports_for: source => ports 
-            } : null
+            } : {}
         }
     }
 }
