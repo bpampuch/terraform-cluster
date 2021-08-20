@@ -13,6 +13,7 @@ module "test-cluster" {
             # volume_type = "io-nvme"           # optional volume type
             # availability_zone = "az1"         # optional availability zone
             image_name = "Centos-8-2004"
+            # generate_fip = true               # optional if you want generate FIPs (default: false)
             floating_ips = [ "10.100.23.11" ]   # optional if you want to associate FIPs
             #fixed_ips = [ "10.111.1.100" ]     # optional if you want to set fixed IPs manually
             open_tcp_ports_for = {

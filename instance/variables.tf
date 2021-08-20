@@ -8,6 +8,12 @@ variable "key_pair" {
     description = "Openspace public key name"
 }
 
+variable "external_network_name" {
+    type = string
+    description = "External network name"
+    default = "external_name"
+}
+
 variable "machines" {
     type = any
 #    map(object({

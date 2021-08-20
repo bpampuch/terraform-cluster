@@ -17,6 +17,7 @@ module "test-cluster" {
             # volume_type = "io-nvme"           # optional volume type
             # availability_zone = "az1"         # optional availability zone
             image_name = "Centos-8-2004"
+            # generate_fip = true               # optional if you want generate FIPs (default: false)
             floating_ips = [ "10.100.23.11" ]   # optional if you want to associate FIPs
             #fixed_ips = [ "10.111.1.100" ]     # optional if you want to set fixed IPs manually
             open_tcp_ports_for = {
@@ -83,6 +84,7 @@ module "test-cluster" {
   * `open_tcp_ports_for` - an optional set of security group rules for the tcp protocol (as described below)
   * `open_udp_ports_for` - an optional set of security group rules for the udp protocol (as described below)
   * `fixed_ips` - an optional array of fixed ips for each instance (the array size should correspond to the `count` parameter)
+  * `generate_fip` - an optional flag to generate FIP from pool `external_network_name`
   * `floating_ips` - an optional array of FIPs for reach instance (the array size should correspond to the `count` parameter)
   * `attach_volumes` - an array of arrays with volume names which are supposed to be attached to particular instances in this group (refer to the description below for further information)
 

@@ -5,7 +5,7 @@ variable "environment" {
 variable "external_network_name" {
     type = string
     description = "External network name"
-    default = "internal_ip_01"
+    default = "external_network"
 }
 
 variable "dns_servers" {

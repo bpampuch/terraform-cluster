@@ -35,4 +35,3 @@ variable "dns_list" {
   description = "List of DNS addresses"
   default = []
 }
-
