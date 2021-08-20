@@ -5,7 +5,7 @@ variable "environment" {
 variable "external_network_name" {
     type = string
     description = "External network name"
-    default = "internal_ip_01"
+    default = "external_network"
 }
 
 variable "dns_servers" {
@@ -15,7 +15,8 @@ variable "dns_servers" {
 
 variable "networks" {
     type = map(string)
-    description = "List of networks and their first three octets, eg. 10.111.1"
+    description = "List of networks"
+    default = {}
 }
 
 variable "network_rules" {
@@ -29,7 +30,7 @@ variable "network_rules" {
 #   So unfortunately, to make it work, type checking is turned off with map(any)
     type = map(any)
     description = "Security group and rules"
-    default = { }
+    default = {}
 }
 
 # 

@@ -2,21 +2,7 @@ locals {
     # https://www.terraform.io/docs/language/functions/flatten.html
     tcp_rules = flatten([
         for network_key, network_rules in var.network_rules: [
-            for remoteip, ports in network_rules.in_tcp: [
-                for port in ports: {
-                    network_key = network_key
-                    remote_ip_prefix = try(local.cidr_by_names[remoteip], remoteip)
-                    # https://stackoverflow.com/questions/47243474/how-to-check-if-string-contains-a-substring-in-terraform-interpolation
-                    port_min = replace(tostring(port), "-", "") != tostring(port) ? split("-", tostring(port))[0] : port
-                    port_max = replace(tostring(port), "-", "") != tostring(port) ? split("-", tostring(port))[1] : port
-                }
-            ] if network_rules.in_tcp != null
-        ]
-    ])
-
-    udp_rules = flatten([
-        for network_key, network_rules in var.network_rules: [
-            for remoteip, ports in network_rules.in_udp: [
+            for remoteip, ports in try(network_rules.in_tcp, []): [
                 for port in ports: {
                     network_key = network_key
                     remote_ip_prefix = try(local.cidr_by_names[remoteip], remoteip)
@@ -25,7 +11,21 @@ locals {
                     port_max = replace(tostring(port), "-", "") != tostring(port) ? split("-", tostring(port))[1] : port
                 }
             ]
-        ] if network_rules.in_udp != null
+        ]
+    ])
+
+    udp_rules = flatten([
+        for network_key, network_rules in var.network_rules: [
+            for remoteip, ports in try(network_rules.in_udp, []): [
+                for port in ports: {
+                    network_key = network_key
+                    remote_ip_prefix = try(local.cidr_by_names[remoteip], remoteip)
+                    # https://stackoverflow.com/questions/47243474/how-to-check-if-string-contains-a-substring-in-terraform-interpolation
+                    port_min = replace(tostring(port), "-", "") != tostring(port) ? split("-", tostring(port))[0] : port
+                    port_max = replace(tostring(port), "-", "") != tostring(port) ? split("-", tostring(port))[1] : port
+                }
+            ]
+        ]
     ])
 }
 
